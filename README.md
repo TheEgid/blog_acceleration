@@ -2,7 +2,7 @@
 
 Блог о коммерческом успехе Юрия Григорьевича. Делюсь советами по бизнесу, жизни и о воспитании детей.
 
-<img src="screenshots/site.png"/>
+<img src="https://github.com/TheEgid/blog_acceleration/blob/master/sensive-blog/screenshots/site.png"/>
 
 ## Запуск
 
