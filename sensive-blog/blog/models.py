@@ -4,17 +4,6 @@ from django.db.models import Count
 from django.urls import reverse
 
 
-# def add_comments_count_to_posts(posts):
-#     posts_with_comments = Post.objects.filter(
-#         id__in=[post.id for post in posts]).annotate(
-#         comments_count=Count('post_comment'))
-#     ids_and_comments = posts_with_comments.values_list('id', 'comments_count')
-#     count_for_id = dict(ids_and_comments)
-#     for post in posts:
-#         post.comments_count = count_for_id[post.id]
-#     return posts
-
-
 class PostQuerySet(models.QuerySet):
     def get_posts(self):
         return Post.objects
@@ -29,16 +18,6 @@ class PostQuerySet(models.QuerySet):
         popular_posts = posts.annotate(num_posts=Count('likes')).\
             order_by('-num_posts')
         return popular_posts
-
-    def count_posts(self):
-        posts = self.get_posts()
-        posts_with_comments = posts.annotate(comments_count=Count('post_comment'))
-        ids_and_comments = posts_with_comments.values_list('id',
-                                                           'comments_count')
-        count_for_id = dict(ids_and_comments)
-        for post in posts_with_comments:
-            post.comments_count = count_for_id[post.id]
-        return posts
 
 
 class Post(models.Model):
