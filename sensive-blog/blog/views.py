@@ -7,7 +7,7 @@ def get_related_posts_count(tag):
 
 
 def get_most_popular_posts():
-    return Post.objects.popular()[:5]. \
+    return Post.objects.popular()[:5].\
         prefetch_with_tags().prefetch_comments_count()
 
 

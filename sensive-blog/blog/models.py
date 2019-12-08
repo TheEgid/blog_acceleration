@@ -7,19 +7,11 @@ from django.urls import reverse
 
 class PostQuerySet(models.QuerySet):
 
-    def get_posts(self):
-        return Post.objects
-
     def fresh(self):
-        posts = self.get_posts()
-        fresh_posts = posts.order_by('-published_at')
-        return fresh_posts
+        return self.annotate(num_posts=Count('likes')).order_by('-published_at')
 
     def popular(self):
-        posts = self.get_posts()
-        popular_posts = posts.annotate(num_posts=Count('likes')).\
-            order_by('-num_posts')
-        return popular_posts
+        return self.annotate(num_posts=Count('likes')).order_by('-num_posts')
 
     def prefetch_with_tags(self):
         return self.prefetch_related('author'). \
@@ -28,8 +20,8 @@ class PostQuerySet(models.QuerySet):
                                           num_posts_with_tags=Count('posts'))))
 
     def prefetch_comments_count(self):
-        _posts = Post.objects.\
-            filter(id__in=Post.objects.values('id')).\
+        _posts = Post.objects. \
+            filter(id__in=[post.id for post in self]). \
             annotate(comments_count=Count('post_comment'))
         ids_and_comments = _posts.values_list('id', 'comments_count')
         count_for_id = dict(ids_and_comments)
@@ -66,13 +58,12 @@ class Post(models.Model):
 class TagQuerySet(models.QuerySet):
 
     def popular(self):
-        popular_tags = Tag.objects.prefetch_related('posts').annotate(
+        return self.prefetch_related('posts').annotate(
             num_tags=Count('posts')).order_by('-num_tags')
-        return popular_tags
 
     def prefetch_tags_count(self):
-        _tags = Tag.objects.prefetch_related('posts').\
-            filter(id__in=Tag.objects.values('id')). \
+        _tags = Tag.objects.prefetch_related('posts'). \
+            filter(id__in=[tag.id for tag in self]). \
             annotate(tags_count=Count('posts'))
         ids_and_tags = _tags.values_list('id', 'tags_count')
         count_for_id = dict(ids_and_tags)
