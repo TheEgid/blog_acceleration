@@ -56,13 +56,10 @@ class Post(models.Model):
 class TagQuerySet(models.QuerySet):
 
     def popular(self):
-        return self.prefetch_related('posts').annotate(
-            num_tags=Count('posts')).order_by('-num_tags')
+        return self.annotate(num_tags=Count('posts')).order_by('-num_tags')
 
     def prefetch_tags_count(self):
-        return Tag.objects.prefetch_related('posts').\
-            filter(id__in=[tag.id for tag in self]).\
-            annotate(tags_count=Count('posts'))
+        return Tag.objects.annotate(tags_count=Count('posts'))
 
 
 class Tag(models.Model):

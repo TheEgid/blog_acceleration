@@ -36,7 +36,8 @@ def serialize_tags(tags):
 
 def serialize_posts(posts):
     for post in posts:
-        post_tags = post.tags.all()
+        #post_tags = post.tags.all()
+        #print(post_tags)
         yield {
             "title": post.title,
             "teaser_text": post.text[:200],
@@ -45,8 +46,8 @@ def serialize_posts(posts):
             "image_url": post.image.url if post.image else None,
             "published_at": post.published_at,
             "slug": post.slug,
-            "tags": post_tags,
-            'first_tag_title': post_tags[0].title,
+            "tags": post.tags.all(),
+            'first_tag_title': post.tags.first().title,
         }
 
 
