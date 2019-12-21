@@ -30,7 +30,7 @@ def get_most_popular_posts_sorted_serialized():
 
 def get_most_popular_tags():
     return Tag.objects.popular(). \
-        prefetch_tags_count().order_by('-tags_count')
+        prefetch_tags_count().order_by('-tags_count')[:5]
 
 
 def serialize_comments(comments):
