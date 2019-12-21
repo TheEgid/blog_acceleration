@@ -6,17 +6,33 @@ from django.shortcuts import render
 
 def get_most_popular_posts():
     return Post.objects.popular(). \
-        prefetch_with_tags().prefetch_comments_count()
+        prefetch_with_tags().\
+        prefetch_comments_count().\
+        prefetch_related('likes'). \
+        prefetch_related('author'). \
+        prefetch_related('tags')
+
+
+def get_most_fresh_posts():
+    return Post.objects.fresh(). \
+        prefetch_with_tags(). \
+        prefetch_comments_count(). \
+        prefetch_related('likes'). \
+        prefetch_related('author'). \
+        prefetch_related('tags')
+
+
+def get_most_popular_posts_sorted_serialized():
+    posts = get_most_popular_posts()
+    most_popular_posts_serialized = list(serialize_posts(posts))
+    return sorted(most_popular_posts_serialized,
+                  key=itemgetter('likes_amount'),
+                  reverse=True)
 
 
 def get_most_popular_tags():
     return Tag.objects.popular(). \
         prefetch_tags_count().order_by('-tags_count')
-
-
-def get_most_fresh_posts():
-    return Post.objects.fresh(). \
-        prefetch_with_tags().prefetch_comments_count()
 
 
 def serialize_comments(comments):
@@ -67,25 +83,13 @@ def serialize_post(post, comments):
 
 
 def index(request):
-    most_popular_posts = get_most_popular_posts()
+    most_popular_posts = get_most_popular_posts_sorted_serialized()
     most_fresh_posts = get_most_fresh_posts()
     most_popular_tags = get_most_popular_tags()
 
-    most_popular_posts_serialized = list(
-        serialize_posts(most_popular_posts.
-                        prefetch_related('author').
-                        prefetch_related('tags').
-                        prefetch_related('likes')
-                        ))
-    most_popular_posts_sorted = sorted(most_popular_posts_serialized,
-                      key=itemgetter('likes_amount'), reverse=True)
     context = {
-        'most_popular_posts': most_popular_posts_sorted,
-        'page_posts': list(serialize_posts(most_fresh_posts.
-                                           prefetch_related('author').
-                                           prefetch_related('tags').
-                                           prefetch_related('likes')
-                                           ))[::-1],
+        'most_popular_posts': most_popular_posts,
+        'page_posts': list(serialize_posts(most_fresh_posts))[::-1],
         'popular_tags': list(serialize_tags(most_popular_tags)),
     }
 
@@ -97,17 +101,13 @@ def post_detail(request, slug):
     comments = post.post_comments.prefetch_related('author')
     serialized_post = serialize_post(post, comments)
 
-    most_popular_posts = get_most_popular_posts()
+    most_popular_posts = get_most_popular_posts_sorted_serialized()
     most_popular_tags = get_most_popular_tags()
 
     context = {
         'post': serialized_post,
         'popular_tags': list(serialize_tags(most_popular_tags)),
-        'most_popular_posts': list(serialize_posts(most_popular_posts.
-                                                   prefetch_related('author').
-                                                   prefetch_related('tags').
-                                                   prefetch_related('likes')
-                                                   )),
+        'most_popular_posts': most_popular_posts,
     }
     return render(request, 'post-details.html', context)
 
@@ -117,8 +117,7 @@ def tag_filter(request, tag_title):
 
     related_posts = tag.posts.all()[:20]. \
         prefetch_related('author').prefetch_with_tags()
-
-    most_popular_posts = get_most_popular_posts()
+    most_popular_posts = get_most_popular_posts_sorted_serialized()
     most_popular_tags = get_most_popular_tags()
 
     context = {
@@ -128,10 +127,7 @@ def tag_filter(request, tag_title):
                       prefetch_related('tags').
                       prefetch_related('likes')
                       ),
-        'most_popular_posts': list(most_popular_posts.
-                                   prefetch_related('author').
-                                   prefetch_related('tags').
-                                   prefetch_related('likes')),
+        'most_popular_posts': list(most_popular_posts),
     }
     return render(request, 'posts-list.html', context)
 
