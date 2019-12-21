@@ -1,13 +1,13 @@
 from operator import itemgetter
 
 from blog.models import Post, Tag
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 
 
 def get_most_popular_posts():
     return Post.objects.popular(). \
         prefetch_with_tags().\
-        prefetch_comments_count().\
+        add_comments_count().\
         prefetch_related('likes'). \
         prefetch_related('author'). \
         prefetch_related('tags')
@@ -16,17 +16,15 @@ def get_most_popular_posts():
 def get_most_fresh_posts():
     return Post.objects.fresh(). \
         prefetch_with_tags(). \
-        prefetch_comments_count(). \
+        add_comments_count(). \
         prefetch_related('likes'). \
         prefetch_related('author'). \
         prefetch_related('tags')
 
 
 def get_most_popular_posts_sorted_serialized():
-    posts = get_most_popular_posts()
-    most_popular_posts_serialized = list(serialize_posts(posts))
-    return sorted(most_popular_posts_serialized,
-                  key=itemgetter('likes_amount'),
+    most_popular_posts_serialized = list(serialize_posts(get_most_popular_posts()))
+    return sorted(most_popular_posts_serialized, key=itemgetter('likes_amount'),
                   reverse=True)
 
 
@@ -97,7 +95,7 @@ def index(request):
 
 
 def post_detail(request, slug):
-    post = Post.objects.get(slug=slug)
+    post = get_object_or_404(Post.objects.select_related('author'), slug=slug)
     comments = post.post_comments.prefetch_related('author')
     serialized_post = serialize_post(post, comments)
 

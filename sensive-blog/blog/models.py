@@ -19,7 +19,7 @@ class PostQuerySet(models.QuerySet):
             Prefetch('tags', queryset=Tag.objects.annotate(
                 num_posts_with_tags=Count('posts'))))
 
-    def prefetch_comments_count(self):
+    def add_comments_count(self):
         return Post.objects.\
             filter(id__in=[post.id for post in self]). \
             annotate(comments_count=Count('post_comments'))
