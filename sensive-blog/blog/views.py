@@ -3,17 +3,17 @@ from django.shortcuts import render
 
 
 def get_most_popular_posts():
-    return Post.objects.popular()[:5].\
+    return Post.objects.popular()[:5]. \
         prefetch_with_tags().prefetch_comments_count()
 
 
 def get_most_popular_tags():
-    return Tag.objects.popular()[:5].\
+    return Tag.objects.popular()[:5]. \
         prefetch_tags_count().order_by('-tags_count')
 
 
 def get_most_fresh_posts():
-    return Post.objects.fresh()[:5].\
+    return Post.objects.fresh()[:5]. \
         prefetch_with_tags().prefetch_comments_count()
 
 
@@ -71,8 +71,14 @@ def index(request):
     most_popular_tags = get_most_popular_tags()
 
     context = {
-        'most_popular_posts': list(serialize_posts(most_popular_posts.prefetch_related('author'))),
-        'page_posts': list(serialize_posts(most_fresh_posts.prefetch_related('author'))),
+        'most_popular_posts': list(serialize_posts(most_popular_posts.
+                                                   prefetch_related('author').
+                                                   prefetch_related('tags')
+                                                   )),
+        'page_posts': list(serialize_posts(most_fresh_posts.
+                                           prefetch_related('author').
+                                           prefetch_related('tags')
+                                           )),
         'popular_tags': list(serialize_tags(most_popular_tags)),
     }
     return render(request, 'index.html', context)
@@ -90,7 +96,9 @@ def post_detail(request, slug):
         'post': serialized_post,
         'popular_tags': list(serialize_tags(most_popular_tags)),
         'most_popular_posts': list(serialize_posts(most_popular_posts.
-                                                   prefetch_related('author'))),
+                                                   prefetch_related('author').
+                                                   prefetch_related('tags')
+                                                   )),
     }
     return render(request, 'post-details.html', context)
 
@@ -98,7 +106,7 @@ def post_detail(request, slug):
 def tag_filter(request, tag_title):
     tag = Tag.objects.get(title=tag_title)
 
-    related_posts = tag.posts.all()[:20].\
+    related_posts = tag.posts.all()[:20]. \
         prefetch_related('author').prefetch_with_tags()
 
     most_popular_posts = get_most_popular_posts()
@@ -107,9 +115,11 @@ def tag_filter(request, tag_title):
     context = {
         "tag": tag.title,
         'popular_tags': list(serialize_tags(most_popular_tags)),
-        'posts': list(related_posts.prefetch_related('author')),
+        'posts': list(related_posts.prefetch_related('author').
+                      prefetch_related('tags')),
         'most_popular_posts': list(most_popular_posts.
-                                   prefetch_related('author')),
+                                   prefetch_related('author').
+                                   prefetch_related('tags')),
     }
     return render(request, 'posts-list.html', context)
 
