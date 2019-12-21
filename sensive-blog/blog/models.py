@@ -8,10 +8,11 @@ from django.urls import reverse
 class PostQuerySet(models.QuerySet):
 
     def fresh(self):
-        return self.annotate(num_posts=Count('likes')).order_by('-published_at')
+        return self.order_by('-published_at')[:5]
 
     def popular(self):
-        return self.annotate(num_posts=Count('likes')).order_by('-num_posts')
+        return self.annotate(likes_count=Count('likes')). \
+                   order_by('-likes_count')[:5]
 
     def prefetch_with_tags(self):
         return self.prefetch_related(
