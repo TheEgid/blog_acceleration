@@ -78,7 +78,7 @@ def index(request):
         'page_posts': list(serialize_posts(most_fresh_posts.
                                            prefetch_related('author').
                                            prefetch_related('tags')
-                                           )),
+                                           ))[::-1],
         'popular_tags': list(serialize_tags(most_popular_tags)),
     }
     return render(request, 'index.html', context)
