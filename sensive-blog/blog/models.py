@@ -20,7 +20,7 @@ class PostQuerySet(models.QuerySet):
                 num_posts_with_tags=Count('posts', distinct=True))))
 
     def add_comments_count(self):
-        return self.filter(id__in=self). \
+        return Post.objects.filter(id__in=self). \
             annotate(comments_count=Count('post_comments', distinct=True))
 
 
