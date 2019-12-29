@@ -23,14 +23,14 @@ def get_most_fresh_posts():
 
 
 def get_most_popular_posts_sorted_serialized():
-    most_popular_posts_serialized = \
-        list(serialize_posts(get_most_popular_posts()))
+    most_popular_posts_serialized = [serialize_post(post) for post
+                                     in (get_most_popular_posts())]
     return sorted(most_popular_posts_serialized, key=itemgetter('likes_amount'),
                   reverse=True)
 
 
 def get_most_popular_tags():
-    return Tag.objects.popular().prefetch_tags_count().order_by('-tags_count')[:5]
+    return Tag.objects.popular().order_by('-tag_posts_count')[:5]
 
 
 def serialize_comments(comments):
@@ -46,27 +46,26 @@ def serialize_tags(tags):
     for tag in tags:
         yield {
             'title': tag.title,
-            'posts_with_tag': tag.tags_count
+            'posts_with_tag': tag.tag_posts_count
         }
 
 
-def serialize_posts(posts):
-    for post in posts:
-        yield {
-            "title": post.title,
-            "teaser_text": post.text[:200],
-            "author": post.author.username,
-            "comments_amount": post.comments_count,
-            "image_url": post.image.url if post.image else None,
-            "published_at": post.published_at,
-            "slug": post.slug,
-            "tags": post.tags.all(),
-            'first_tag_title': post.tags.first().title,
-            'likes_amount': post.likes.count(),
-        }
+def serialize_post(post):
+    return {
+        "title": post.title,
+        "teaser_text": post.text[:200],
+        "author": post.author.username,
+        "comments_amount": post.comments_count,
+        "image_url": post.image.url if post.image else None,
+        "published_at": post.published_at,
+        "slug": post.slug,
+        "tags": post.tags.all(),
+        'first_tag_title': post.tags.first().title,
+        'likes_amount': post.likes.count(),
+    }
 
 
-def serialize_post(post, comments):
+def serialize_post_detail(post, comments):
     return {
         "title": post.title,
         "text": post.text,
@@ -87,7 +86,7 @@ def index(request):
 
     context = {
         'most_popular_posts': most_popular_posts,
-        'page_posts': list(serialize_posts(most_fresh_posts))[::-1],
+        'page_posts': [serialize_post(post) for post in most_fresh_posts][::-1],
         'popular_tags': list(serialize_tags(most_popular_tags)),
     }
 
@@ -97,7 +96,7 @@ def index(request):
 def post_detail(request, slug):
     post = get_object_or_404(Post.objects.select_related('author'), slug=slug)
     comments = post.post_comments.prefetch_related('author')
-    serialized_post = serialize_post(post, comments)
+    serialized_post = serialize_post_detail(post, comments)
 
     most_popular_posts = get_most_popular_posts()
     most_popular_tags = get_most_popular_tags()
