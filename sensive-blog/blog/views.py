@@ -121,10 +121,7 @@ def tag_filter(request, tag_title):
     context = {
         "tag": tag.title,
         'popular_tags': list(serialize_tags(most_popular_tags)),
-        'posts': list(related_posts.prefetch_related('author').
-                      prefetch_related('tags').
-                      prefetch_related('likes')
-                      ),
+        'posts': list(related_posts.prefetch_related('author')),
         'most_popular_posts': list(most_popular_posts),
     }
     return render(request, 'posts-list.html', context)
