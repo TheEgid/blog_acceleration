@@ -11,13 +11,14 @@ class PostQuerySet(models.QuerySet):
         return self.order_by('-published_at')[:5]
 
     def popular(self):
-        return self.annotate(likes_count=Count('likes', distinct=True)). \
+        return self.annotate(likes_count=Count('likes')). \
                    order_by('-likes_count')[:5]
 
-    def prefetch_with_tags(self):
+    def prefetch_with_tags_and_likes(self):
         return self.prefetch_related(
             Prefetch('tags', queryset=Tag.objects.annotate(
-                posts_with_tag=Count('posts', distinct=True))))
+                posts_with_tag=Count('posts', distinct=True)))). \
+            annotate(likes_count=Count('likes'))
 
     def add_comments_count(self):
         return Post.objects.filter(id__in=self). \
@@ -56,9 +57,8 @@ class Post(models.Model):
 class TagQuerySet(models.QuerySet):
 
     def popular(self):
-        popular_tags = self.annotate(tag_posts_count=Count('posts')).\
+        return self.annotate(tag_posts_count=Count('posts')). \
             order_by('-tag_posts_count')
-        return popular_tags
 
 
 class Tag(models.Model):
