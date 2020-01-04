@@ -4,7 +4,12 @@ from django.shortcuts import render, get_object_or_404
 
 
 def get_most_popular_posts():
-    return Post.objects.popular(). \
+    """
+    Prefetch and annotate functions so slow and hard for the single request.
+    Good to fetch rational small result first and applying theirs after.
+    """
+    popular_posts_ids = [post.id for post in Post.objects.popular()]
+    return Post.objects.filter(id__in=popular_posts_ids). \
         add_comments_count(). \
         prefetch_related('author'). \
         prefetch_with_tags_and_likes(). \
@@ -12,7 +17,24 @@ def get_most_popular_posts():
 
 
 def get_most_fresh_posts():
-    return Post.objects.fresh(). \
+    """
+    Prefetch and annotate functions so slow and hard for the single request.
+    Good to fetch rational small result first and applying theirs after.
+    """
+    fresh_posts_ids = [post.id for post in Post.objects.fresh()]
+    return Post.objects.filter(id__in=fresh_posts_ids). \
+        add_comments_count(). \
+        prefetch_related('author'). \
+        prefetch_with_tags_and_likes()
+
+
+def get_tag_related_posts(tag):
+    """
+    Prefetch and annotate functions so slow and hard for the single request.
+    Good to fetch rational small result first and applying theirs after.
+    """
+    related_posts_ids = [post.id for post in tag.posts.all()[:20]]
+    return Post.objects.filter(id__in=related_posts_ids). \
         add_comments_count(). \
         prefetch_related('author'). \
         prefetch_with_tags_and_likes()
@@ -101,16 +123,15 @@ def post_detail(request, slug):
 
 def tag_filter(request, tag_title):
     tag = Tag.objects.get(title=tag_title)
-    most_popular_tags = get_most_popular_tags()
+    tag_related_posts = get_tag_related_posts(tag)
 
-    related_posts = tag.posts.filter(tags=tag)[:20].add_comments_count(). \
-        prefetch_with_tags_and_likes().prefetch_related('author')
+    most_popular_tags = get_most_popular_tags()
     most_popular_posts = get_most_popular_posts()
 
     context = {
         "tag": tag.title,
         'popular_tags': list(serialize_tags(most_popular_tags)),
-        'posts': [serialize_post(post) for post in related_posts],
+        'posts': [serialize_post(post) for post in tag_related_posts],
         'most_popular_posts': [serialize_post(post) for
                                post in most_popular_posts],
     }
